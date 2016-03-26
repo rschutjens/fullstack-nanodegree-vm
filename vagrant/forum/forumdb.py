@@ -1,8 +1,10 @@
 #
 # Database access functions for the web forum.
-# 
+#
 
 import time
+import psycopg2
+import bleach
 
 ## Database connection
 DB = []
@@ -16,6 +18,12 @@ def GetAllPosts():
       pointing to the post content, and 'time' key pointing to the time
       it was posted.
     '''
+    pg = psycopg2.connect("dbname = forum")
+    c = pg.cursor()
+    c.execute("select content, time from posts order by time desc")
+    DB = c.fetchall()
+    pg.close()
+
     posts = [{'content': str(row[1]), 'time': str(row[0])} for row in DB]
     posts.sort(key=lambda row: row['time'], reverse=True)
     return posts
@@ -27,5 +35,11 @@ def AddPost(content):
     Args:
       content: The text content of the new post.
     '''
-    t = time.strftime('%c', time.localtime())
-    DB.append((t, content))
+    pg = psycopg2.connect("dbname = forum")
+    c = pg.cursor()
+    #t = time.strftime('%c', time.localtime())
+
+    c.execute("insert into posts (content) values (%s)", (bleach.clean(content), ))
+    #DB.append((t, content))
+    pg.commit()
+    pg.close()
