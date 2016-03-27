@@ -22,3 +22,17 @@ create table matches (
   win integer references players(id),
   loss integer references players(id)
 );
+
+-- View to create a player standings ordered by wins.
+create view playerStandings as
+  select p.id,
+     p.name,
+     coalesce(a.wins, 0) as wins,
+     coalesce(a.wins, 0) + coalesce(b.losses, 0) as matchcount
+    from
+      (select win as id, count(*) as wins from matches group by win) as a
+    full join
+      (select loss as id, count(*) as losses from matches group by loss) as b
+    using (id)
+    right join players as p on p.id = a.id or p.id = b.id
+  order by wins desc;
