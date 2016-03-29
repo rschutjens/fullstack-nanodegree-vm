@@ -7,6 +7,7 @@
 # as appropriate to account for your module's added functionality.
 
 from tournament import *
+import itertools
 
 def testFirstRound():
     '''
@@ -163,34 +164,81 @@ def testPairings():
     registerPlayer("Rainbow Dash")
     registerPlayer("Princess Celestia")
     registerPlayer("Princess Luna")
+    registerPlayer("Brad Split")
     standings = playerStandings()
-    [id1, id2, id3, id4, id5, id6, id7, id8] = [row[0] for row in standings]
     pairings = swissPairings()
+    byes = assignedByes()
+    byeidr1 = byes[0][0]
+    [(id1, name1, id2, name2), (id3, name3, id4, name4), (id5, name5, id6, name6), (id7, name7, id8, name8)] = pairings
+    #[id1, id2, id3, id4, id5, id6, id7, id8] = [row[0] for row in standings]
+    if len(byes) != 1:
+        raise ValueError(
+            "No bye assigned for first round, got {byecount}".format(byecount=len(byes)))
     if len(pairings) != 4:
         raise ValueError(
-            "For eight players, swissPairings should return 4 pairs. Got {pairs}".format(pairs=len(pairings)))
+            "For nine players, swissPairings should return 4 pairs. Got {pairs}".format(pairs=len(pairings)))
     reportMatch(id1, id2)
     reportMatch(id3, id4)
     reportMatch(id5, id6)
     reportMatch(id7, id8)
+
+    # checking for right pairings, need to be more strict than for 8 players
+    standings = playerStandings()
+    win_set = set([row[0] for row in standings if row[2] == 1])
+    loss_set = set([row[0] for row in standings if row[2] == 0])
+    win_comb = itertools.combinations(win_set, 2)
+    win_comb = set([frozenset(row) for row in win_comb])
+    loss_comb = itertools.combinations(loss_set, 2)
+    loss_comb = set([frozenset(row) for row in loss_comb])
+    prod_comb = itertools.product(win_set, loss_set)
+    prod_comb = set([frozenset(row) for row in prod_comb])
+
     pairings = swissPairings()
+    byes = assignedByes()
+    if len(byes) != 2:
+        raise ValueError(
+            "No bye assigned for second round, got {byecount}".format(byecount=len(byes)))
     if len(pairings) != 4:
         raise ValueError(
-            "For eight players, swissPairings should return 4 pairs. Got {pairs}".format(pairs=len(pairings)))
+            "For nine players, swissPairings should return 4 pairs. Got {pairs}".format(pairs=len(pairings)))
+
     [(pid1, pname1, pid2, pname2), (pid3, pname3, pid4, pname4), (pid5, pname5, pid6, pname6), (pid7, pname7, pid8, pname8)] = pairings
-    possible_pairs = set([frozenset([id1, id3]), frozenset([id1, id5]),
-                          frozenset([id1, id7]), frozenset([id3, id5]),
-                          frozenset([id3, id7]), frozenset([id5, id7]),
-                          frozenset([id2, id4]), frozenset([id2, id6]),
-                          frozenset([id2, id8]), frozenset([id4, id6]),
-                          frozenset([id4, id8]), frozenset([id6, id8])
-                          ])
-    actual_pairs = set([frozenset([pid1, pid2]), frozenset([pid3, pid4]), frozenset([pid5, pid6]), frozenset([pid7, pid8])])
-    for pair in actual_pairs:
-        if pair not in possible_pairs:
-            raise ValueError(
-                "After one match, players with one win should be paired.")
-    print "10. After one match, players with one win are properly paired."
+
+    # old method for 8 players
+    # possible_pairs = set([frozenset([id1, id3]), frozenset([id1, id5]),
+    #                       frozenset([id1, id7]), frozenset([id3, id5]),
+    #                       frozenset([id3, id7]), frozenset([id5, id7]),
+    #                       frozenset([id2, id4]), frozenset([id2, id6]),
+    #                       frozenset([id2, id8]), frozenset([id4, id6]),
+    #                       frozenset([id4, id8]), frozenset([id6, id8])
+    #                       ])
+    actual_pairs = set([frozenset([pid1, pid2]), frozenset([pid3, pid4]), frozenset([pid5, pid6]),frozenset([pid7, pid8])])
+
+    win_sets = list(actual_pairs.intersection(win_comb))
+    print win_sets
+    if len(win_sets) != 2:
+        raise ValueError(
+            """For 9 players after first round at least 2 matches should be
+            between last rounds winners, got {}""".format(len(win_sets)))
+
+    loss_sets = list(actual_pairs.intersection(loss_comb))
+    print loss_sets
+    if len(loss_sets) != 1:
+        raise ValueError(
+            """For 9 players after first round at least 1 match should be
+            between last rounds losers, got {}""".format(len(loss_sets)))
+
+    prod_sets = list(actual_pairs.intersection(prod_comb))
+    print prod_sets
+    if len(prod_sets) != 1:
+        raise ValueError(
+            """For 9 players after first round at 1 match should be
+            between a winner and loser, got {}""".format(len(prod_sets)))
+    # for pair in actual_pairs:
+    #     if pair not in possible_pairs:
+    #         raise ValueError(
+    #             "After one match, players with one win should be paired.")
+    print "10. After one match, players are properly paired."
 
 
 if __name__ == '__main__':
