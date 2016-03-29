@@ -17,6 +17,7 @@ def deleteMatches():
     db = connect()
     c = db.cursor()
     c.execute("delete from matches;")
+    c.execute("delete from byes;")
     db.commit()
     db.close()
 
