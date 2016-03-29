@@ -4,6 +4,7 @@
 #
 
 import psycopg2
+import random
 
 
 def connect():
@@ -84,6 +85,15 @@ def reportMatch(winner, loser):
     db.commit()
     db.close()
 
+def playedMatchups():
+    """ All played matchups up to that point in the competition.
+    """
+    db = connect()
+    c = db.cursor()
+    c.execute("select * from playedMatchups;")
+    matchups = c.fetchall()
+    db.close()
+    return matchups
 
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
@@ -93,6 +103,16 @@ def swissPairings():
     player with an equal or nearly-equal win record, that is, a player adjacent
     to him or her in the standings.
 
+    Use player standings to find possible pairings, use already played matchups
+    to find ellibible setups (i.e. nobody is paired against the same opponent
+    twice.)
+
+    The opponent of a player is picked *randomly* from all elligible opponents:
+        - first from players with the same amount of wins
+        - second from players with one more win
+    Both are conditional on the fact that they have not played against the
+    oppnent before.
+
     Returns:
       A list of tuples, each of which contains (id1, name1, id2, name2)
         id1: the first player's unique id
@@ -100,3 +120,37 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
+    standings = playerStandings()
+    playedmatchups = playedMatchups()
+
+    matchups = []
+    while len(standings) > 1:
+        # pop player from standings
+        player = standings.pop(-1)
+        playerID = player[0]
+        playerWins = player[2]
+
+        # player already played against:
+        played = [row[1] for row in playedmatchups if row[0] == playerID]
+
+        # opponents that match wins of player
+        # check if opponents contains already played people & pick oppenent
+        opponents = [row[0] for row in standings if row[2] == playerWins]
+        possibilities = [opp for opp in opponents if opp not in played]
+
+        if len(opponents) == 0: # if no opponents with same wins
+            # opponents that have 1 more win than player
+            opponents = [row[0] for row in standings if row[2] == (playerWins + 1)]
+            possibilities = [opp for opp in opponents if opp not in played]
+
+        opponent = random.choice(possibilities)
+
+        # find opponent's standings, add match to matchups
+        index_opp = [row[0] for row in standings].index(opponent)
+        #index_opp = [i for row, i in enumerate(standings) if row[0] == opponent]
+        match = (playerID, player[1], opponent, standings[index_opp][1])
+        matchups.append(match)
+
+        # remove opponent from standings table so they won't be paired again.
+        del(standings[index_opp])
+    return matchups

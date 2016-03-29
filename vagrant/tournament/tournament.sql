@@ -36,3 +36,12 @@ create view playerStandings as
     using (id)) as ab
     right join players as p on p.id = ab.id
   order by wins desc;
+
+-- view to show all played matchups until that point in the tournament.
+  create view playedMatchups as
+    select * from
+      (select win as id, loss as opponent from matches) as a
+    full join
+      (select loss as id, win as opponent from matches) as b
+    using (id, opponent)
+    order by id;
