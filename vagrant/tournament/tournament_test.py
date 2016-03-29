@@ -30,6 +30,29 @@ def testFirstRound():
     reportMatch(id5, id6)
     reportMatch(id7, id8)
 
+def testFirstRoundUneven():
+    '''
+    Fill DB with players and first round to efficiently test pairings queries and functions.
+    '''
+    deleteMatches()
+    deletePlayers()
+    registerPlayer("Twilight Sparkle")
+    registerPlayer("Fluttershy")
+    registerPlayer("Applejack")
+    registerPlayer("Pinkie Pie")
+    registerPlayer("Rarity")
+    registerPlayer("Rainbow Dash")
+    registerPlayer("Princess Celestia")
+    registerPlayer("Princess Luna")
+    registerPlayer("Brad Split")
+    standings = playerStandings()
+    [id1, id2, id3, id4, id5, id6, id7, id8, id9] = [row[0] for row in standings]
+    reportMatch(id1, id2)
+    reportMatch(id3, id4)
+    reportMatch(id5, id6)
+    reportMatch(id7, id8)
+    reportBye(id9)
+
 
 def testCount():
     """
