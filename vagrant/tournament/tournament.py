@@ -37,6 +37,20 @@ def countPlayers():
     db.close()
     return result[0]
 
+def validMatchups(playerid, wins):
+    """Returns valid matchups from player standings and played matchups."""
+    db = connect()
+    c = db.cursor()
+    query = '''select a.id from
+                (select id from playerStandings where wins = %s and id != %s) as a
+               where a.id not in
+                (select opponent from playedMatchups where id = %s);
+            '''
+    c.execute(query, (wins, playerid, playerid))
+    matchups = c.fetchall()
+    db.close()
+    return matchups
+
 def registerPlayer(name):
     """Adds a player to the tournament database.
 
@@ -125,7 +139,7 @@ def swissPairings():
 
     matchups = []
     while len(standings) > 1:
-        # pop player from standings
+        # pop player from standings, don't consider him for later pairings
         player = standings.pop(-1)
         playerID = player[0]
         playerWins = player[2]
