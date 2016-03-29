@@ -99,6 +99,18 @@ def reportMatch(winner, loser):
     db.commit()
     db.close()
 
+def reportBye(playerid):
+    """Recors a bye for a player in matches.
+
+    Args:
+        playerid: the id number of the player receiving the bye
+    """
+    db = connect()
+    c = db.cursor()
+    c.execute("insert into matches (win, bye) values (%s, %s);", (playerid, True))
+    db.commit()
+    db.close()
+
 def playedMatchups():
     """ All played matchups up to that point in the competition.
     """

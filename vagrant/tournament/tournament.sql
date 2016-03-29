@@ -17,13 +17,17 @@ create table players (
 
 -- Table containing all matches, match ID as players can face off in different
 -- matches against eachother, players need to be in players table.
+-- a bye is given to one person each round if there is an uneven number of
+-- players. This counts as a won match for the player against no opponent.
 create table matches (
   id serial primary key,
   win integer references players(id),
-  loss integer references players(id)
+  loss integer references players(id),
+  bye boolean
 );
 
 -- View to create a player standings ordered by wins.
+-- as NaN is not in playersID byes get handled properly: no player NaN
 create view playerStandings as
   select p.id,
      p.name,
@@ -37,11 +41,12 @@ create view playerStandings as
     right join players as p on p.id = ab.id
   order by wins desc;
 
--- view to show all played matchups until that point in the tournament.
+-- view to show all played matchups in the tournament per player.
+-- as byes count as a match, but there was no matchup, ignore byes.
   create view playedMatchups as
     select * from
-      (select win as id, loss as opponent from matches) as a
+      (select win as id, loss as opponent from matches where bye is null) as a
     full join
-      (select loss as id, win as opponent from matches) as b
+      (select loss as id, win as opponent from matches where bye is null) as b
     using (id, opponent)
     order by id;
