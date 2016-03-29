@@ -107,7 +107,7 @@ def reportBye(playerid):
     """
     db = connect()
     c = db.cursor()
-    c.execute("insert into matches (win, bye) values (%s, %s);", (playerid, True))
+    c.execute("insert into byes (id) values (%s);", (playerid, ))
     db.commit()
     db.close()
 
@@ -120,6 +120,15 @@ def playedMatchups():
     matchups = c.fetchall()
     db.close()
     return matchups
+
+def assignedByes():
+    """ Return all players that have received a bye
+    """
+    db = connect()
+    c = db.cursor()
+    c.execute("select * from byes;")
+    byes = c.fetchall()
+    return byes
 
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
@@ -148,7 +157,24 @@ def swissPairings():
     """
     standings = playerStandings()
     playedmatchups = playedMatchups()
+    byes = [row[0] for row in assignedByes()]
 
+    # handle byes
+    if len(standings) % 2 != 0: # uneven players
+        # if first round assign bye at random
+        if standings[0][-1] == 0:
+            bye = random.choice(standings)
+        else:
+        # assign bye to lowest standing player who has not received one before.
+            rev_stands = list(reversed(standings))
+            bye = next(row for row in rev_stands if row[0] not in byes)
+
+        # give bye and remove player from standing so he won't get paired
+        reportBye(bye[0])
+        index_bye = [row[0] for row in standings].index(bye[0])
+        del(standings[index_bye])
+
+    # handle matchups
     matchups = []
     while len(standings) > 1:
         # pop player from standings, don't consider him for later pairings
@@ -156,16 +182,14 @@ def swissPairings():
         playerID = player[0]
         playerWins = player[2]
 
-        # player already played against:
+        # player already played against, opponents that match wins of players,
+        # and check if player played opponent
         played = [row[1] for row in playedmatchups if row[0] == playerID]
-
-        # opponents that match wins of player
-        # check if opponents contains already played people & pick oppenent
         opponents = [row[0] for row in standings if row[2] == playerWins]
         possibilities = [opp for opp in opponents if opp not in played]
 
-        if len(opponents) == 0: # if no opponents with same wins
-            # opponents that have 1 more win than player
+        # if no opponents with same wins, check players with 1 more win
+        if len(opponents) == 0:
             opponents = [row[0] for row in standings if row[2] == (playerWins + 1)]
             possibilities = [opp for opp in opponents if opp not in played]
 
@@ -173,7 +197,6 @@ def swissPairings():
 
         # find opponent's standings, add match to matchups
         index_opp = [row[0] for row in standings].index(opponent)
-        #index_opp = [i for row, i in enumerate(standings) if row[0] == opponent]
         match = (playerID, player[1], opponent, standings[index_opp][1])
         matchups.append(match)
 
