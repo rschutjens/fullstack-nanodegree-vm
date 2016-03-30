@@ -20,8 +20,9 @@ create table players (
 
 create table matches (
   id serial primary key,
-  win integer references players(id),
-  loss integer references players(id)
+  p1 integer references players(id),
+  p2 integer references players(id),
+  win integer references players(id)
 );
 
 -- a bye is given to one person each round if there is an uneven number of
@@ -33,16 +34,25 @@ create table byes (
 );
 
 -- view to get all wins and losses of a player, this is used as subset for
--- playerstandings stats and OMW
+-- playerstandings stats and OMW and draws.
 create view playersMatchstats as
   select ab.id,
-    coalesce(ab.wins, 0) as wins,
-    coalesce(ab.losses, 0) as losses
+    coalesce(ab.winl, 0) + coalesce(ab.winr, 0) as wins,
+    coalesce(ab.lossl, 0) + coalesce(ab.lossr, 0) as losses,
+    coalesce(ab.drawl, 0) + coalesce(ab.drawr, 0) as draws
    from
-    ((select win as id, count(*) as wins from matches group by win) as a
-  full join
-    (select loss as id, count(*) as losses from matches group by loss) as b
-  using (id)) as ab;
+    ((select p1 as id,
+      sum(case when p1 = win then 1 else 0 end) as winl,
+      sum(case when p2 = win then 1 else 0 end) as lossl,
+      sum(case when win is null then 1 else 0 end) as drawl
+      from matches group by p1) as a
+    full join
+    (select p2 as id,
+      sum(case when p2 = win then 1 else 0 end) as winr,
+      sum(case when p1 = win then 1 else 0 end) as lossr,
+      sum(case when win is null then 1 else 0 end) as drawr
+      from matches group by p2) as b
+    using (id)) as ab;
 
 
 -- view to show all played matchups in the tournament per player.
