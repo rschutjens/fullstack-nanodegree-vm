@@ -71,7 +71,11 @@ def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
 
     The first entry in the list should be the player in first place, or a player
-    tied for first place if there is currently a tie.
+    tied for first place if there is currently a tie. After wins the players are
+    sorted on OMW, the amount of matches won by their opponents, lastly on
+    matches played. For players with the same wins, the one that
+    has played stronger opponents will be placed higher, and for player that
+    have received a bye to be placed lower if they have the same wins and OMW.
 
     Returns:
       A list of tuples, each of which contains (id, name, wins, matches):
@@ -79,6 +83,7 @@ def playerStandings():
         name: the player's full name (as registered)
         wins: the number of matches the player has won
         matches: the number of matches the player has played
+        OMW: the number of matches won by opponents of the player
     """
     db = connect()
     c = db.cursor()
@@ -163,7 +168,7 @@ def swissPairings():
     # handle byes
     if len(standings) % 2 != 0: # uneven players
         # if first round assign bye at random
-        if standings[0][-1] == 0:
+        if standings[0][3] == 0:
             bye = random.choice(standings)
         else:
         # assign bye to lowest standing player who has not received one before.
