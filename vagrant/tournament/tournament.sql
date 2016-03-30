@@ -36,32 +36,32 @@ create table byes (
 -- view to get all wins and losses of a player, this is used as subset for
 -- playerstandings stats and OMW and draws.
 create view playersMatchstats as
-  select ab.id,
-    coalesce(ab.winl, 0) + coalesce(ab.winr, 0) as wins,
-    coalesce(ab.lossl, 0) + coalesce(ab.lossr, 0) as losses,
-    coalesce(ab.drawl, 0) + coalesce(ab.drawr, 0) as draws
+  select id,
+    coalesce(winl, 0) + coalesce(winr, 0) as wins,
+    coalesce(lossl, 0) + coalesce(lossr, 0) as losses,
+    coalesce(drawl, 0) + coalesce(drawr, 0) as draws
    from
-    ((select p1 as id,
+    (select p1 as id,
       sum(case when p1 = win then 1 else 0 end) as winl,
       sum(case when p2 = win then 1 else 0 end) as lossl,
       sum(case when win is null then 1 else 0 end) as drawl
-      from matches group by p1) as a
+      from matches group by p1) a
     full join
     (select p2 as id,
       sum(case when p2 = win then 1 else 0 end) as winr,
       sum(case when p1 = win then 1 else 0 end) as lossr,
       sum(case when win is null then 1 else 0 end) as drawr
-      from matches group by p2) as b
-    using (id)) as ab;
+      from matches group by p2) b
+    using (id);
 
 
 -- view to show all played matchups in the tournament per player.
 -- as byes count as a match, but there was no matchup, ignore byes.
 create view playedMatchups as
   select * from
-    (select win as id, loss as opponent from matches) as a
+    (select p1 as id, p2 as opponent from matches) as a
   full join
-    (select loss as id, win as opponent from matches) as b
+    (select p2 as id, p1 as opponent from matches) as b
   using (id, opponent)
   order by id;
 
@@ -83,7 +83,7 @@ create view OMW as
   select p.id,
      p.name,
      coalesce(abc.wins, 0) + coalesce(byes, 0) as wins,
-     coalesce(abc.wins + abc.losses, 0) as matchcount,
+     coalesce(abc.wins, 0) + coalesce(abc.losses, 0) as matchcount,
      coalesce(abc.OMW, 0) as OMW
     from
       ((playersMatchstats as a
