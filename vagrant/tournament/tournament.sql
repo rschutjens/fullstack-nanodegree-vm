@@ -37,18 +37,32 @@ create table byes (
 create view playerStandings as
   select p.id,
      p.name,
-     coalesce(abc.wins, 0) + coalesce(byes, 0) as wins,
-     coalesce(abc.wins, 0) + coalesce(abc.losses, 0) as matchcount
+     abc.wins + coalesce(byes, 0) as wins,
+     abc.wins + abc.losses as matchcount,
+     coalesce(abc.OMW, 0) as OMW
     from
-      ((select win as id, count(*) as wins from matches group by win) as a
+      ((playersMatchstats as a
     full join
-      (select loss as id, count(*) as losses from matches group by loss) as b
-    using (id)
+      (select id, count(id) as byes from byes group by id) as b
+    using(id)) as ab
     full join
-      (select id, count(id) as byes from byes group by id) as c
-    using(id)) as abc
+      OMW as c
+    using (id)) as abc
     right join players as p on p.id = abc.id
-  order by wins desc, matchcount desc;
+  order by wins desc, OMW desc, matchcount desc;
+
+-- view to get all wins and losses of a player, this is used as subset for
+-- playerstandings stats and OMW
+create view playersMatchstats as
+  select ab.id,
+    coalesce(ab.wins, 0) as wins,
+    coalesce(ab.losses, 0) as losses
+   from
+    ((select win as id, count(*) as wins from matches group by win) as a
+  full join
+    (select loss as id, count(*) as losses from matches group by loss) as b
+  using (id)) as ab;
+
 
 -- view to show all played matchups in the tournament per player.
 -- as byes count as a match, but there was no matchup, ignore byes.
@@ -59,3 +73,15 @@ create view playedMatchups as
     (select loss as id, win as opponent from matches) as b
   using (id, opponent)
   order by id;
+
+-- Opponents Win Matches (OMW) calculation, using playerMatchStats and
+-- playedMatchups. Only dependent on matches, should not take into account byes.
+create view OMW as
+  select ab.player as id,
+    sum(ab.wins) as OMW
+   from
+   ((select id as player, opponent as id from playedMatchups) as a
+  full join
+   (select id, wins from playersMatchstats) as b
+  using (id)) as ab
+  group by ab.player
