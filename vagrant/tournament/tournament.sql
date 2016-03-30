@@ -32,25 +32,6 @@ create table byes (
   primary key (id)
 );
 
--- View to create a player standings ordered by wins, matchcount (for byes).
--- Uses matches table and byes table to determine standings
-create view playerStandings as
-  select p.id,
-     p.name,
-     abc.wins + coalesce(byes, 0) as wins,
-     abc.wins + abc.losses as matchcount,
-     coalesce(abc.OMW, 0) as OMW
-    from
-      ((playersMatchstats as a
-    full join
-      (select id, count(id) as byes from byes group by id) as b
-    using(id)) as ab
-    full join
-      OMW as c
-    using (id)) as abc
-    right join players as p on p.id = abc.id
-  order by wins desc, OMW desc, matchcount desc;
-
 -- view to get all wins and losses of a player, this is used as subset for
 -- playerstandings stats and OMW
 create view playersMatchstats as
@@ -84,4 +65,23 @@ create view OMW as
   full join
    (select id, wins from playersMatchstats) as b
   using (id)) as ab
-  group by ab.player
+  group by ab.player;
+
+  -- View to create a player standings ordered by wins, matchcount (for byes).
+  -- Uses matches table and byes table to determine standings
+  create view playerStandings as
+  select p.id,
+     p.name,
+     coalesce(abc.wins, 0) + coalesce(byes, 0) as wins,
+     coalesce(abc.wins + abc.losses, 0) as matchcount,
+     coalesce(abc.OMW, 0) as OMW
+    from
+      ((playersMatchstats as a
+    full join
+      (select id, count(id) as byes from byes group by id) as b
+    using(id)) as ab
+    full join
+      OMW as c
+    using (id)) as abc
+    right join players as p on p.id = abc.id
+  order by wins desc, OMW desc, matchcount desc;
