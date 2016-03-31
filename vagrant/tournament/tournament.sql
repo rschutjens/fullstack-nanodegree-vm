@@ -92,16 +92,23 @@ create view OMW as
   create view playerStandings as
   select p.id,
      p.name,
-     coalesce(abc.wins, 0) + coalesce(byes, 0) as wins,
-     coalesce(abc.wins, 0) + coalesce(abc.losses, 0) as matchcount,
-     coalesce(abc.OMW, 0) as OMW
+     coalesce(wins, 0) + coalesce(byes, 0) as wins,
+     coalesce(losses, 0) as losses,
+     coalesce(draws, 0) as draws,
+     coalesce(wins, 0) + coalesce(losses, 0) + coalesce (draws, 0 ) as matchcount,
+     coalesce(OMW, 0) as OMW
     from
       ((playersMatchstats as a
     full join
-      (select id, count(id) as byes from byes group by id) as b
+      (select id,
+        count(id) as byes
+      from byes
+      group by id) as b
     using(id)) as ab
     full join
       OMW as c
     using (id)) as abc
-    right join players as p on p.id = abc.id
+    right join
+    players as p
+    using (id)
   order by wins desc, OMW desc, matchcount desc;
