@@ -26,10 +26,10 @@ def testFirstRound():
     registerPlayer("Princess Luna")
     standings = playerStandings()
     [id1, id2, id3, id4, id5, id6, id7, id8] = [row[0] for row in standings]
-    reportMatch(id1, id2)
-    reportMatch(id3, id4)
-    reportMatch(id5, id6)
-    reportMatch(id7, id8)
+    reportMatch(id1, id2, id1)
+    reportMatch(id3, id4, id3)
+    reportMatch(id5, id6, id5)
+    reportMatch(id7, id8, id7)
 
 def testFirstRoundUneven():
     '''
@@ -48,10 +48,10 @@ def testFirstRoundUneven():
     registerPlayer("Brad Split")
     standings = playerStandings()
     [id1, id2, id3, id4, id5, id6, id7, id8, id9] = [row[0] for row in standings]
-    reportMatch(id1, id2)
-    reportMatch(id3, id4)
-    reportMatch(id5, id6)
-    reportMatch(id7, id8)
+    reportMatch(id1, id2, id1)
+    reportMatch(id3, id4, id3)
+    reportMatch(id5, id6, id5)
+    reportMatch(id7, id8, id7)
     reportBye(id9)
 
 
@@ -104,9 +104,9 @@ def testStandingsBeforeMatches():
                          "they have played any matches.")
     elif len(standings) > 2:
         raise ValueError("Only registered players should appear in standings.")
-    if len(standings[0]) != 5:
-        raise ValueError("Each playerStandings row should have five columns.")
-    [(id1, name1, wins1, matches1, OMW1), (id2, name2, wins2, matches2, OMW2)] = standings
+    if len(standings[0]) != 7:
+        raise ValueError("Each playerStandings row should have seven columns.")
+    [(id1, name1, wins1, losses1, draws1, matches1, OMW1), (id2, name2, wins2, losses2, draws2, matches2, OMW2)] = standings
     if matches1 != 0 or matches2 != 0 or wins1 != 0 or wins2 != 0:
         raise ValueError(
             "Newly registered players should have no matches or wins.")
@@ -128,10 +128,10 @@ def testReportMatches():
     registerPlayer("Diane Grant")
     standings = playerStandings()
     [id1, id2, id3, id4] = [row[0] for row in standings]
-    reportMatch(id1, id2)
-    reportMatch(id3, id4)
+    reportMatch(id1, id2, id1)
+    reportMatch(id3, id4, id3)
     standings = playerStandings()
-    for (i, n, w, m, o) in standings:
+    for (i, n, w, l, d, m, o) in standings:
         if m != 1:
             raise ValueError("Each player should have one match recorded.")
         if i in (id1, id3):
@@ -149,7 +149,7 @@ def testReportMatches():
     standings = playerStandings()
     if len(standings) != 4:
         raise ValueError("Match deletion should not change number of players in standings.")
-    for (i, n, w, m, o) in standings:
+    for (i, n, w, l, d, m, o) in standings:
         if m != 0:
             raise ValueError("After deleting matches, players should have zero matches recorded.")
         if w != 0:
@@ -183,10 +183,10 @@ def testPairings():
     if len(pairings) != 4:
         raise ValueError(
             "For nine players, swissPairings should return 4 pairs. Got {pairs}".format(pairs=len(pairings)))
-    reportMatch(id1, id2)
-    reportMatch(id3, id4)
-    reportMatch(id5, id6)
-    reportMatch(id7, id8)
+    reportMatch(id1, id2, id1)
+    reportMatch(id3, id4, id3)
+    reportMatch(id5, id6, id5)
+    reportMatch(id7, id8, id7)
 
     # checking for right pairings, need to be more strict than for 8 players
     standings = playerStandings()

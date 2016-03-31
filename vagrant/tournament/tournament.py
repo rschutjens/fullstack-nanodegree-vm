@@ -171,7 +171,7 @@ def swissPairings():
     # handle byes
     if len(standings) % 2 != 0: # uneven players
         # if first round assign bye at random
-        if standings[0][3] == 0:
+        if standings[0][5] == 0:
             bye = random.choice(standings)
         else:
         # assign bye to lowest standing player who has not received one before.
