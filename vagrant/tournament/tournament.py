@@ -92,16 +92,19 @@ def playerStandings():
     db.close()
     return standings
 
-def reportMatch(winner, loser):
+def reportMatch(player1, player2, win = None):
     """Records the outcome of a single match between two players.
 
     Args:
-      winner:  the id number of the player who won
-      loser:  the id number of the player who lost
+      player1:  the id number of the first player
+      player2:  the id number of the second player
+      win: id of player who won, None for draw (default to None if no winner
+        is provided)
+
     """
     db = connect()
     c = db.cursor()
-    c.execute("insert into matches (win, loss) values (%s, %s);", (winner, loser))
+    c.execute("insert into matches (p1, p2, win) values (%s, %s, %s);", (player1, player2, win))
     db.commit()
     db.close()
 
