@@ -19,18 +19,22 @@ create table players (
 -- matches against eachother, players need to be in players table.
 
 create table matches (
-  id serial primary key,
   p1 integer references players(id),
   p2 integer references players(id),
-  win integer references players(id)
+  win integer,
+  check (win in (0, 1, 2)),
+  check (p1 <> p2),
+  primary key (p1, p2)
 );
+
+create unique index matchup  on matches
+  (greatest(p1, p2), least(p1, p2));
 
 -- a bye is given to one person each round if there is an uneven number of
 -- players. This counts as a won match for the player against no opponent.
 -- id as primary key ensures on DB level that no player receives 2 byes.
 create table byes (
-  id integer references players(id),
-  foreign key (id) references players(id)
+  id integer references players(id)
 );
 
 -- view to get all wins and losses of a player, this is used as subset for
