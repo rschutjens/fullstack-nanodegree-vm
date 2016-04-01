@@ -30,7 +30,7 @@ create table matches (
 -- id as primary key ensures on DB level that no player receives 2 byes.
 create table byes (
   id integer references players(id),
-  primary key (id)
+  foreign key (id) references players(id)
 );
 
 -- view to get all wins and losses of a player, this is used as subset for
