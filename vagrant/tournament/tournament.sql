@@ -102,18 +102,18 @@ create view playedMatchups as
 -- Opponents Win Matches (OMW) calculation, using playerMatchStats and
 -- playedMatchups. Only dependent on matches, should not take into account byes.
 create view OMW as
-  select player as id,
+  select Tid, player as id,
     sum(wins) as OMW
    from
-   (select id as player,
+   (select Tid, id as player,
      opponent as id
   from playedMatchups where draw is null) as a
   left join
-   (select id,
+   (select Tid, id,
      wins
   from playersMatchstats) as b
-  using (id)
-  group by player;
+  using (Tid, id)
+  group by Tid, player;
 
   -- View to create a player standings ordered by wins, matchcount (for byes).
   -- Uses matches table and byes table to determine standings
