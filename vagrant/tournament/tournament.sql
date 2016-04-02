@@ -24,7 +24,7 @@ create table players (
 -- multiple tournaments, but register for 1 only once.
 create table registered_players (
   id integer references players(id),
-  Tid integer references tournaments(Tid),
+  Tid integer references tournaments(Tid) on delete cascade,
   primary key (id, Tid)
 );
 
@@ -32,7 +32,7 @@ create table registered_players (
 -- matches against eachother, players need to be in players table.
 -- win is player id if someone won, or null for draw.
 create table matches (
-  Tid integer references tournaments(Tid),
+  Tid integer references tournaments(Tid) on delete cascade,
   p1 integer references players(id),
   p2 integer references players(id),
   win integer references players(id),
@@ -50,7 +50,7 @@ create unique index matchup on matches
 -- id as primary key ensures on DB level that no player receives 2 byes per
 -- tournament.
 create table byes (
-  Tid integer references tournaments(Tid),
+  Tid integer references tournaments(Tid) on delete cascade,
   id integer references players(id),
   primary key (Tid, id)
 );
