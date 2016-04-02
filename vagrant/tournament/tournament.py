@@ -19,8 +19,8 @@ def createTournament():
     db = connect()
     c = db.cursor()
     c.execute("insert into tournaments (Tid) values (default) returning Tid;")
-    Tid = c.fetchall()
     db.commit()
+    Tid = c.fetchall()
     db.close()
     return Tid
 
@@ -69,22 +69,22 @@ def countPlayers():
     db.close()
     return result[0]
 
-def validMatchups(playerid, wins):
+def validMatchups(Tid, playerid, wins):
     """Returns valid matchups from player standings and played matchups."""
     db = connect()
     c = db.cursor()
     query = '''select a.id from
-                (select id from playerStandings where wins = %s and id != %s) as a
+                (select id from playerStandings where wins = %s and id != %s and Tid = %s) as a
                where a.id not in
-                (select opponent from playedMatchups where id = %s);
+                (select opponent from playedMatchups where id = %s and Tid = %s);
             '''
-    c.execute(query, (wins, playerid, playerid))
+    c.execute(query, (wins, playerid, Tid, playerid, Tid))
     matchups = c.fetchall()
     db.close()
     return matchups
 
-def registerPlayer(name):
-    """Adds a player to the tournament database.
+def addPlayer(name):
+    """Add player to player database.
 
     The database assigns a unique serial id number for the player.  (This
     should be handled by your SQL database schema, not in your Python code.)
@@ -98,7 +98,23 @@ def registerPlayer(name):
     db.commit()
     db.close()
 
-def playerStandings():
+def registerPlayer(Tid, pid):
+    """Register a player to the tournament with Tid database.
+
+    The database assigns a unique serial id number for the player.  (This
+    should be handled by your SQL database schema, not in your Python code.)
+
+    Args:
+      Tid: the id for the tournament.
+      pid: the id of the player participating in tournament Tid.
+    """
+    db = connect()
+    c = db.cursor()
+    c.execute("insert into registered_players (Tid, id) values (%s, %s)", (Tid, pid))
+    db.commit()
+    db.close()
+
+def playerStandings(Tid):
     """Returns a list of the players and their win records, sorted by wins.
 
     The first entry in the list should be the player in first place, or a player
@@ -108,6 +124,8 @@ def playerStandings():
     has played stronger opponents will be placed higher, and for player that
     have received a bye to be placed lower if they have the same wins and OMW.
 
+    Args:
+        Tid: the id of the tournament you want the player standings of
     Returns:
       A list of tuples, each of which contains (id, name, wins, matches):
         id: the player's unique id (assigned by the database)
@@ -118,15 +136,16 @@ def playerStandings():
     """
     db = connect()
     c = db.cursor()
-    c.execute('select * from playerStandings;') # see view in tournament.sql
+    c.execute('select id, name, wins, losses, draws, matchcount, OMW from playerStandings where Tid = %s;', (Tid,)) # see view in tournament.sql
     standings = c.fetchall()
     db.close()
     return standings
 
-def reportMatch(player1, player2, win = None):
+def reportMatch(Tid, player1, player2, win = None):
     """Records the outcome of a single match between two players.
 
     Args:
+      Tid: the id of the tournament the match is played in
       player1:  the id number of the first player
       player2:  the id number of the second player
       win: id of player who won, None for draw (default to None if no winner
@@ -135,42 +154,49 @@ def reportMatch(player1, player2, win = None):
     """
     db = connect()
     c = db.cursor()
-    c.execute("insert into matches (p1, p2, win) values (%s, %s, %s);", (player1, player2, win))
+    c.execute("insert into matches (Tid, p1, p2, win) values (%s, %s, %s, %s);", (Tid, player1, player2, win))
     db.commit()
     db.close()
 
-def reportBye(playerid):
+def reportBye(Tid, playerid):
     """Recors a bye for a player in matches.
 
     Args:
+        Tid: the id of tournament the player received the bye
         playerid: the id number of the player receiving the bye
     """
     db = connect()
     c = db.cursor()
-    c.execute("insert into byes (id) values (%s);", (playerid, ))
+    c.execute("insert into byes (Tid, id) values (%s, %s);", (Tid, playerid))
     db.commit()
     db.close()
 
-def playedMatchups():
+def playedMatchups(Tid):
     """ All played matchups up to that point in the competition.
+
+    Args:
+        Tid: id of tournament you want the playedMatchups of.
     """
     db = connect()
     c = db.cursor()
-    c.execute("select * from playedMatchups;")
+    c.execute("select * from playedMatchups where Tid = %s;", (Tid,))
     matchups = c.fetchall()
     db.close()
     return matchups
 
-def assignedByes():
-    """ Return all players that have received a bye
+def assignedByes(Tid):
+    """ Return all players that have received a bye for tournament Tid.
+
+    Args:
+        Tid: tournament you want the byes of.
     """
     db = connect()
     c = db.cursor()
-    c.execute("select * from byes;")
+    c.execute("select * from byes where Tid = %s;", (Tid,))
     byes = c.fetchall()
     return byes
 
-def swissPairings():
+def swissPairings(Tid):
     """Returns a list of pairs of players for the next round of a match.
 
     Assuming that there are an even number of players registered, each player
@@ -186,7 +212,7 @@ def swissPairings():
         - first from players with the same amount of wins
         - second from players with one more win
     Both are conditional on the fact that they have not played against the
-    oppnent before.
+    opponent before.
 
     Returns:
       A list of tuples, each of which contains (id1, name1, id2, name2)
@@ -195,9 +221,9 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    standings = playerStandings()
-    playedmatchups = playedMatchups()
-    byes = [row[0] for row in assignedByes()]
+    standings = playerStandings(Tid)
+    playedmatchups = playedMatchups(Tid)
+    byes = [row[1] for row in assignedByes(Tid)]
 
     # handle byes
     if len(standings) % 2 != 0: # uneven players
@@ -210,7 +236,7 @@ def swissPairings():
             bye = next(row for row in rev_stands if row[0] not in byes)
 
         # give bye and remove player from standing so he won't get paired
-        reportBye(bye[0])
+        reportBye(Tid, bye[0])
         index_bye = [row[0] for row in standings].index(bye[0])
         del(standings[index_bye])
 
