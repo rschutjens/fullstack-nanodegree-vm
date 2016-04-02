@@ -117,3 +117,32 @@ create view OMW as
     players as p
     using (id)
   order by wins desc, OMW desc, matchcount desc;
+
+-- contains all valid matchups for that point of the tournament: players with
+-- equal wins are paired, but not matchups that have already been played.
+create view validmatchupsequalwin as
+  select a.id as p1,
+    b.id as p2
+  from
+    playerStandings as a
+   full join
+    playerStandings as b
+   on a.wins = b.wins
+  where a.id <> b.id
+   and (a.id, b.id) not in (select id, opponent from playedMatchups)
+  order by p1;
+
+-- contains all valid matchups for that part of the tournament: players with
+-- one win or loss difference are paired, already played matchups are filtered
+-- out.
+create view validmatchupsonediffwin as
+  select a.id as p1,
+    b.id as p2
+  from
+    playerStandings as a
+   full join
+    playerStandings as b
+   on (a.wins = b.wins + 1) or (a.wins = b.wins - 1)
+  where a.id <> b.id
+   and (a.id, b.id) not in (select id, opponent from playedMatchups)
+  order by p1;
