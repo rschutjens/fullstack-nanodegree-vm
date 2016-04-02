@@ -32,7 +32,8 @@ create table registered_players (
 -- matches against eachother, players need to be in players table.
 -- win is player id if someone won, or null for draw.
 -- No rematches between players (this might cause problems for other tournament
--- types, but as of now only swiss-style is supported), can ofc. play against
+-- types if players are allowed to play the same opponent twice, but as of now
+-- only swiss-style is supported), can ofc. play against
 -- each other in different tournament.
 create table matches (
   Tid integer references tournaments(Tid) on delete cascade,
@@ -61,23 +62,25 @@ create table byes (
 -- view to get all wins and losses of a player, this is used as subset for
 -- playerstandings stats and OMW and draws.
 create view playersMatchstats as
-  select id,
+  select Tid,
+    id,
     coalesce(winl, 0) + coalesce(winr, 0) as wins,
     coalesce(lossl, 0) + coalesce(lossr, 0) as losses,
     coalesce(drawl, 0) + coalesce(drawr, 0) as draws
    from
-    (select p1 as id,
+    (select p1 as id, Tid,
       sum(case when p1 = win then 1 else 0 end) as winl,
       sum(case when p2 = win then 1 else 0 end) as lossl,
       sum(case when win is null then 1 else 0 end) as drawl
-      from matches group by p1) a
+      from matches group by Tid, p1) a
     full join
-    (select p2 as id,
+    (select p2 as id, Tid,
       sum(case when p2 = win then 1 else 0 end) as winr,
       sum(case when p1 = win then 1 else 0 end) as lossr,
       sum(case when win is null then 1 else 0 end) as drawr
-      from matches group by p2) b
-    using (id);
+      from matches group by Tid, p2) b
+    using (id, Tid)
+    order by Tid, id;
 
 
 -- view to show all played matchups in the tournament per player.
