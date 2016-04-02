@@ -87,17 +87,17 @@ create view playersMatchstats as
 -- as byes count as a match, but there was no matchup, ignore byes.
 create view playedMatchups as
   select * from
-    (select p1 as id,
+    (select Tid, p1 as id,
       p2 as opponent,
       case when win is null then 1 end as draw
     from matches) as a
   full join
-    (select p2 as id,
+    (select Tid, p2 as id,
       p1 as opponent,
       case when win is null then 1 end as draw
     from matches) as b
-  using (id, opponent, draw)
-  order by id;
+  using (Tid, id, opponent, draw)
+  order by Tid, id;
 
 -- Opponents Win Matches (OMW) calculation, using playerMatchStats and
 -- playedMatchups. Only dependent on matches, should not take into account byes.
