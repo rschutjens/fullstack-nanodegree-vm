@@ -31,6 +31,9 @@ create table registered_players (
 -- Table containing all matches, match ID as players can face off in different
 -- matches against eachother, players need to be in players table.
 -- win is player id if someone won, or null for draw.
+-- No rematches between players (this might cause problems for other tournament
+-- types, but as of now only swiss-style is supported), can ofc. play against
+-- each other in different tournament.
 create table matches (
   Tid integer references tournaments(Tid) on delete cascade,
   p1 integer references players(id),
