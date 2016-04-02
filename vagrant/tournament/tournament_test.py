@@ -221,21 +221,21 @@ def testPairings():
     actual_pairs = set([frozenset([pid1, pid2]), frozenset([pid3, pid4]), frozenset([pid5, pid6]),frozenset([pid7, pid8])])
 
     win_sets = list(actual_pairs.intersection(win_comb))
-    print win_sets
+    print 'Matches of last round winners:', win_sets
     if len(win_sets) != 2:
         raise ValueError(
             """For 9 players after first round at least 2 matches should be
             between last rounds winners, got {}""".format(len(win_sets)))
 
     loss_sets = list(actual_pairs.intersection(loss_comb))
-    print loss_sets
+    print 'Matches of last round losers',loss_sets
     if len(loss_sets) != 1:
         raise ValueError(
             """For 9 players after first round at least 1 match should be
             between last rounds losers, got {}""".format(len(loss_sets)))
 
     prod_sets = list(actual_pairs.intersection(prod_comb))
-    print prod_sets
+    print 'Matches between a winner and loser:', prod_sets
     if len(prod_sets) != 1:
         raise ValueError(
             """For 9 players after first round at 1 match should be
