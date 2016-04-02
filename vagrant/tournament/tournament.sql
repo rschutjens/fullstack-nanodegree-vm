@@ -118,7 +118,8 @@ create view OMW as
   -- View to create a player standings ordered by wins, matchcount (for byes).
   -- Uses matches table and byes table to determine standings
   create view playerStandings as
-  select p.id,
+  select Tid,
+     p.id,
      p.name,
      coalesce(wins, 0) + coalesce(byes, 0) as wins,
      coalesce(losses, 0) as losses,
@@ -128,18 +129,21 @@ create view OMW as
     from
       ((playersMatchstats as a
     full join
-      (select id,
+      (select Tid, id,
         count(id) as byes
       from byes
-      group by id) as b
-    using(id)) as ab
+      group by Tid, id) as b
+    using(Tid, id)) as ab
     full join
       OMW as c
-    using (id)) as abc
+    using (Tid, id)) as abc
     right join
-    players as p
+      registered_players
+    using (Tid, id)
+    left join
+      players as p
     using (id)
-  order by wins desc, OMW desc, matchcount desc;
+  order by Tid, wins desc, OMW desc, matchcount desc;
 
 -- contains all valid matchups for that point of the tournament: players with
 -- equal wins are paired, but not matchups that have already been played.
