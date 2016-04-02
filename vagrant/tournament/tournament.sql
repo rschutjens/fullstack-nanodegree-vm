@@ -9,33 +9,50 @@
 create database tournament;
 \c tournament;
 
+-- Contains all tournaments:
+create table tournaments (
+  Tid serial primary key
+);
+
 -- Contains all players and gives them an ID.
 create table players (
   id serial primary key,
   name text
 );
 
+-- Contains all players registered for a tournament, players can play in
+-- multiple tournaments, but register for 1 only once.
+create table registered_players (
+  id integer references players(id),
+  Tid integer references tournaments(Tid),
+  primary key (id, Tid)
+);
+
 -- Table containing all matches, match ID as players can face off in different
 -- matches against eachother, players need to be in players table.
 -- win is player id if someone won, or null for draw.
-
 create table matches (
+  Tid integer references tournaments(Tid),
   p1 integer references players(id),
   p2 integer references players(id),
   win integer references players(id),
   check ( (win = p1) or (win = p2) or (win is null) ),
   check (p1 <> p2),
-  primary key (p1, p2)
+  primary key (Tid, p1, p2)
 );
--- make sure no duplicated matches are added.
+
+-- make sure no duplicated matches are added:
 create unique index matchup on matches
-  (greatest(p1, p2), least(p1, p2));
+  (Tid, greatest(p1, p2), least(p1, p2));
 
 -- a bye is given to one person each round if there is an uneven number of
 -- players. This counts as a won match for the player against no opponent.
--- id as primary key ensures on DB level that no player receives 2 byes.
+-- id as primary key ensures on DB level that no player receives 2 byes per
+-- tournament.
 create table byes (
-  id integer references players(id)
+  Tid integer references tournaments(Tid),
+  id integer references players(id),
+  primary key (Tid, id)
 );
 
 -- view to get all wins and losses of a player, this is used as subset for
