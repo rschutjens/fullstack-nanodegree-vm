@@ -98,6 +98,23 @@ def addPlayer(name):
     db.commit()
     db.close()
 
+def applyPlayer(name, Tid):
+    """Add player to DB and register for tournament
+
+    Args:
+        name: player name.
+        Tid: tournament the player will play in.
+    """
+
+    db = connect()
+    c = db.cursor()
+    c.execute("insert into players (name) values (%s) returning id", (name,))
+    db.commit()
+    pid = c.fetchall()[0][0]
+    c.execute("insert into registered_players (Tid, id) values (%s, %s)", (Tid, pid))
+    db.commit()
+    db.close()
+
 def registerPlayer(Tid, pid):
     """Register a player to the tournament with Tid database.
 
