@@ -149,6 +149,8 @@ def playerStandings(Tid):
         id: the player's unique id (assigned by the database)
         name: the player's full name (as registered)
         wins: the number of matches the player has won
+        losses: the number of matches the player has lossed
+        draws: the number of matches that ended in a draw for the player
         matches: the number of matches the player has played
         OMW: the number of matches won by opponents of the player
     """
