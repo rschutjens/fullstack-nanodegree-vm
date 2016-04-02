@@ -25,10 +25,21 @@ def createTournament():
     return Tid
 
 def deleteTournaments():
-    """Removes ALL the tournaments from the database. Including matches/byes!"""
+    """Removes ALL the tournaments from the database. Including matches,
+    byes, and registered_players!"""
     db = connect()
     c = db.cursor()
     c.execute("delete from tournaments;")
+    db.commit()
+    db.close()
+
+def deleteTournament(Tid):
+    """Removes the tournament with Tid from DB, including matches, byes, and
+    registed_players
+    """
+    db = connect()
+    c = db.cursor()
+    c.execute("delete from tournaments where Tid = %s", (Tid,))
     db.commit()
     db.close()
 
